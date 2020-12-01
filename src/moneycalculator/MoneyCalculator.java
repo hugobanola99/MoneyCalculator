@@ -1,5 +1,9 @@
 package moneycalculator;
 
+import moneycalculator.model.ExchangeRate;
+import moneycalculator.model.Currency;
+import moneycalculator.model.Money;
+import moneycalculator.model.CurrencyList;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -68,9 +72,7 @@ public class MoneyCalculator {
     }
     
     private static ExchangeRate getExchangeRate(Currency from, Currency to) throws IOException{
-        URL url = 
-            new URL("http://free.currencyconverterapi.com/api/v5/convert?q=" +
-                    from + "_" + to + "&compact=y");
+        URL url = new URL("https://api.exchangeratesapi.io/latest?symbols="+to.getCode()+"&base="+from.getCode());
         URLConnection connection = url.openConnection();
         try (BufferedReader reader = 
                 new BufferedReader(
