@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -16,16 +18,13 @@ public class MoneyCalculator {
         moneyCalculator.execute();
     }
     
-    private double amount;
-    private double exchangeRate;
-    private Map<String, Currency> currencies = new HashMap<>();
-    private Currency currencyFrom;
+    private final CurrencyList currencyList;
+    private Money money;
     private Currency currencyTo;
+    private ExchangeRate exchangeRate;
     
      public MoneyCalculator(){
-        currencies.put("USD", new Currency("USD", "Dólar americano", "$"));
-        currencies.put("EUR", new Currency("EUR", "Euros", "€"));
-        currencies.put("GBP", new Currency("GBP", "Libras Esterlinas", "£"));
+        this.currencyList = new CurrencyList();
     }
     
     private void execute() throws Exception{
@@ -37,27 +36,38 @@ public class MoneyCalculator {
     private void input() throws Exception{
         System.out.println("Intoduzca cantidad");
         Scanner scanner = new Scanner(System.in);
-        amount = Double.parseDouble(scanner.next());
+        double amount = Double.parseDouble(scanner.next());
         
-        System.out.println("Intoduzca divisa origen");
-        currencyFrom = currencies.get(scanner.next().toUpperCase());
-        
-        System.out.println("Intoduzca divisa destino");
-        currencyTo = currencies.get(scanner.next().toUpperCase());
+        while (true) {
+            System.out.println("Introduzca código divisa origen");
+            Currency currency = currencyList.get(scanner.next());
+            money = new Money(amount, currency);
+            if (currency != null) break;
+            System.out.println("Divisa no conocida");
+        }
+
+        while (true) {
+            System.out.println("Introduzca codigo divisa destino");
+            currencyTo = currencyList.get(scanner.next());
+            if (currencyTo != null) break;
+            System.out.println("Divisa no conocida");
+        }
        
     }
     
     private void process() throws Exception{
-        exchangeRate = getExchangeRate(currencyFrom.getCode(), currencyTo.getCode());
+        exchangeRate = getExchangeRate(money.getCurrency(), currencyTo);
         
     }
     
     private void output(){
-        System.out.println(amount + " " + currencyFrom + " equivalen a " + amount *
-                exchangeRate + " " + currencyTo);
+        System.out.println(money.getAmount() + " "
+                + money.getCurrency().getSymbol() + " equivalen a " 
+                + money.getAmount() * exchangeRate.getRate() + " "
+                + currencyTo.getSymbol());
     }
     
-    private static double getExchangeRate(String from, String to) throws IOException{
+    private static ExchangeRate getExchangeRate(Currency from, Currency to) throws IOException{
         URL url = 
             new URL("http://free.currencyconverterapi.com/api/v5/convert?q=" +
                     from + "_" + to + "&compact=y");
@@ -66,8 +76,8 @@ public class MoneyCalculator {
                 new BufferedReader(
                         new InputStreamReader(connection.getInputStream()))) {
             String line = reader.readLine();
-            String line1 = line.substring(line.indexOf(to)+12, line.indexOf("}"));
-            return Double.parseDouble(line1);
+             String line1 = line.substring(line.indexOf(to.getCode())+12,line.indexOf("}"));
+            return new ExchangeRate(from, to, LocalDate.of(2018, Month.SEPTEMBER, 26),Double.parseDouble(line1));
         }
     } 
 }
